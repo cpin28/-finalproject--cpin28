@@ -57,7 +57,7 @@ cli/  tui/  gui/    the three Python clients
 static/            web UI (HTML/CSS/JS) served by the server at /
 migrations/        seed script
 tests/             unit / contract / integration
-docs/              requirements, architecture, design, testing, diagrams
+docs/              requirements, architecture, design, testing, refactoring, diagrams
 ```
 
 ## Tests
@@ -66,4 +66,5 @@ docs/              requirements, architecture, design, testing, diagrams
 uv run pytest          # unit + contract + integration
 ```
 
-See [`docs/`](docs/) for requirements, architecture, design rationale, and the test plan.
+See [`docs/`](docs/) for requirements, architecture, design rationale, the test plan, and
+the [refactoring log](docs/refactoring.md) (two structure-only refactors, tests green throughout).

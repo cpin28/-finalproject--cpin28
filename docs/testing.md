@@ -11,8 +11,8 @@ tests/
     test_search.py          fuzzy scoring & ranking
     cli/                    CLI argument parsing
     client/                 MealPlanClient request building (httpx MockTransport)
-  contract/            the REST API's status codes & response shapes (FastAPI TestClient)
-  integration/         real SQLite, the real client over a live server, and the real TUI
+  contract/            the REST API's shapes, plus the served web client (JS + endpoints)
+  integration/         real SQLite, the real client/TUI/GUI over a live server
 ```
 
 ## Unit (`tests/unit/`)
@@ -38,7 +38,10 @@ Pure functions and parsing, built by hand — fast, no I/O.
 Drives the API through FastAPI's `TestClient`. Asserts what clients rely on: `201` on
 create, `404`/`409`/`422` on the error paths, joined ingredient names, the exact
 shopping-list/suggestion shapes, and that `/recipes/search` isn't shadowed by
-`/recipes/{id}`. `test_web_client.py` checks the static web app is served.
+`/recipes/{id}`. `test_web_client.py` covers the web client: the files are served,
+`app.js` is valid JavaScript (`node --check`), and every endpoint the JS calls matches a
+real route on the app — a guard against client/server drift (a full browser DOM test is
+deliberately out of scope).
 
 ## Integration (`tests/integration/`)
 
@@ -50,11 +53,13 @@ shopping-list/suggestion shapes, and that `/recipes/search` isn't shadowed by
 - **`test_tui_pilot.py`** — the real `MealPlanTUI` driven headlessly via Textual's
   `run_test` pilot against a live seeded server: it loads recipes, renders suggestions, and
   fuzzy-searches — the interactive-client analogue of the test above.
+- **`test_gui_smoke.py`** — the real tkinter `MealPlanGUI` against a live server: loads
+  every tab and fuzzy-searches. Skips cleanly where there's no display (headless CI).
 
 ## Running
 
 ```bash
-uv run pytest                 # everything (59 tests)
+uv run pytest                 # everything (62 tests)
 uv run pytest tests/unit      # just the fast logic/parsing tests
 uv run pytest -q
 ```

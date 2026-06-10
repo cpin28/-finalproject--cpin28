@@ -49,10 +49,12 @@ class MealPlanTUI(App):
         yield Header()
         with TabbedContent(initial="recipes-tab"):
             with TabPane("Recipes", id="recipes-tab"):
-                yield Input(placeholder="Search recipes…", id="recipe-search")
+                yield Input(placeholder="Fuzzy-search recipes…", id="recipe-search")
                 with Horizontal():
                     yield DataTable(id="recipe-table", cursor_type="row")
                     yield Static("Select a recipe.", id="recipe-detail")
+            with TabPane("Suggest", id="suggest-tab"):
+                yield DataTable(id="suggest-table", cursor_type="row")
             with TabPane("Pantry", id="pantry-tab"):
                 with Horizontal(classes="form"):
                     yield Select([], id="pantry-ingredient", prompt="ingredient", allow_blank=True)
@@ -77,10 +79,12 @@ class MealPlanTUI(App):
 
     def on_mount(self) -> None:
         self.query_one("#recipe-table", DataTable).add_columns("id", "recipe", "servings")
+        self.query_one("#suggest-table", DataTable).add_columns("recipe", "status")
         self.query_one("#pantry-table", DataTable).add_columns("ingredient", "qty", "unit")
         self.query_one("#plan-table", DataTable).add_columns("date", "meal", "recipe", "servings")
         self.query_one("#shop-table", DataTable).add_columns("qty", "unit", "ingredient")
         self.refresh_recipes()
+        self.refresh_suggestions()
         self.refresh_pantry()
         self.refresh_plan()
 
@@ -93,7 +97,8 @@ class MealPlanTUI(App):
             return None
 
     def refresh_recipes(self, query: str | None = None) -> None:
-        recipes = self._safe(self.client.list_recipes, query)
+        # fuzzy search when there's a query, otherwise the full list
+        recipes = self._safe(self.client.search_recipes, query) if query else self._safe(self.client.list_recipes)
         if recipes is None:
             return
         self._recipes = {r["id"]: r for r in recipes}
@@ -101,8 +106,20 @@ class MealPlanTUI(App):
         table.clear()
         for r in recipes:
             table.add_row(str(r["id"]), r["name"], str(r["servings"]), key=str(r["id"]))
-        # recipe selects on the plan tab
-        self.query_one("#plan-recipe", Select).set_options([(r["name"], r["id"]) for r in recipes])
+        # keep the plan tab's recipe picker populated with the full list (not the filtered one)
+        if not query:
+            self.query_one("#plan-recipe", Select).set_options([(r["name"], r["id"]) for r in recipes])
+
+    def refresh_suggestions(self) -> None:
+        suggestions = self._safe(self.client.suggest_recipes)
+        if suggestions is None:
+            return
+        table = self.query_one("#suggest-table", DataTable)
+        table.clear()
+        for s in suggestions:
+            status = ("✓ ready to cook" if s["can_make"]
+                      else f"have {s['have_count']}/{s['need_count']} — missing: {', '.join(s['missing'])}")
+            table.add_row(s["name"], status)
 
     def refresh_pantry(self) -> None:
         pantry = self._safe(self.client.list_pantry)
@@ -175,6 +192,7 @@ class MealPlanTUI(App):
             self.query_one("#pantry-qty", Input).value = ""
             self.notify("pantry updated")
             self.refresh_pantry()
+            self.refresh_suggestions()
 
     def _add_plan(self) -> None:
         date = self.query_one("#plan-date", Input).value.strip()
@@ -210,6 +228,7 @@ class MealPlanTUI(App):
                 ing = self._pantry_rows.get(key.value)
                 if ing is not None and self._safe(self.client.remove_pantry, ing) is not None:
                     self.refresh_pantry()
+                    self.refresh_suggestions()
         elif active == "plan-tab":
             table = self.query_one("#plan-table", DataTable)
             if table.row_count:

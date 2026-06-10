@@ -31,11 +31,12 @@ uv run mealplan-gui                  # tkinter GUI
 Then open **http://127.0.0.1:8000/** in a browser for the **web UI**. (The API's Swagger
 docs are at `/docs`.)
 
-All four clients are at feature parity: browse/search recipes with a "can I make this?"
-check, view and **edit** the pantry, build the weekly plan (add/remove meals), and
-generate the shopping list. The CLI additionally scripts one-off actions; the TUI, GUI,
-and web UI are interactive. In the TUI, press `d` to remove the highlighted pantry/plan
-row; the GUI and web UI have explicit remove buttons.
+All four clients are at feature parity: fuzzy-search recipes with a "can I make this?"
+check, see pantry-based **suggestions** ("what can I make?"), view and **edit** the
+pantry, build the weekly plan (add/remove meals), and generate the shopping list. The
+CLI additionally scripts one-off actions; the TUI, GUI, and web UI are interactive. In
+the TUI, press `d` to remove the highlighted pantry/plan row; the GUI and web UI have
+explicit remove buttons.
 
 ## What it does
 

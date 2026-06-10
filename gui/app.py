@@ -30,6 +30,7 @@ class MealPlanGUI:
         self.nb = ttk.Notebook(self.root)
         self.nb.pack(fill="both", expand=True, padx=8, pady=6)
         self._build_recipes()
+        self._build_suggestions()
         self._build_pantry()
         self._build_plan()
         self._build_shopping()
@@ -100,16 +101,42 @@ class MealPlanGUI:
 
     def load_recipes(self) -> None:
         q = self.recipe_search.get().strip() or None
-        recipes = self._safe(self.client.list_recipes, q)
+        # fuzzy search when there's a query, otherwise the full list
+        recipes = self._safe(self.client.search_recipes, q) if q else self._safe(self.client.list_recipes)
         if recipes is None:
             return
         self._recipes = {r["id"]: r for r in recipes}
-        self._recipe_names = {r["name"]: r["id"] for r in recipes}
         self._clear(self.recipe_tree)
         for r in recipes:
             self.recipe_tree.insert("", "end", iid=str(r["id"]), values=(r["name"], r["servings"]))
-        if hasattr(self, "plan_recipe"):
-            self.plan_recipe["values"] = list(self._recipe_names)
+        # keep the plan tab's recipe picker on the full list (not the filtered one)
+        if not q:
+            self._recipe_names = {r["name"]: r["id"] for r in recipes}
+            if hasattr(self, "plan_recipe"):
+                self.plan_recipe["values"] = list(self._recipe_names)
+
+    # --- Suggestions tab ---
+    def _build_suggestions(self) -> None:
+        f = ttk.Frame(self.nb)
+        self.nb.add(f, text="Suggestions")
+        ttk.Label(f, text="Recipes ranked by what your pantry covers — makeable first.").pack(
+            anchor="w", pady=4)
+        self.suggest_tree = ttk.Treeview(f, columns=("recipe", "status"), show="headings")
+        self.suggest_tree.heading("recipe", text="Recipe")
+        self.suggest_tree.heading("status", text="Status")
+        self.suggest_tree.column("recipe", width=160)
+        self.suggest_tree.column("status", width=420)
+        self.suggest_tree.pack(fill="both", expand=True, pady=4)
+
+    def load_suggestions(self) -> None:
+        suggestions = self._safe(self.client.suggest_recipes)
+        if suggestions is None:
+            return
+        self._clear(self.suggest_tree)
+        for s in suggestions:
+            status = ("✓ ready to cook" if s["can_make"]
+                      else f"have {s['have_count']}/{s['need_count']} — missing: {', '.join(s['missing'])}")
+            self.suggest_tree.insert("", "end", values=(s["name"], status))
 
     # --- Pantry tab ---
     def _build_pantry(self) -> None:
@@ -156,6 +183,7 @@ class MealPlanGUI:
             self.pantry_qty.delete(0, "end")
             self._say("pantry updated")
             self.load_pantry()
+            self.load_suggestions()
 
     def remove_pantry(self) -> None:
         sel = self.pantry_tree.selection()
@@ -164,6 +192,7 @@ class MealPlanGUI:
             return
         if self._safe(self.client.remove_pantry, int(sel[0])) is not None:
             self.load_pantry()
+            self.load_suggestions()
 
     # --- Plan tab ---
     def _build_plan(self) -> None:
@@ -249,6 +278,7 @@ class MealPlanGUI:
     # --- lifecycle ---
     def run(self) -> None:
         self.load_recipes()
+        self.load_suggestions()
         self.load_pantry()
         self.load_plan()
         self.root.mainloop()

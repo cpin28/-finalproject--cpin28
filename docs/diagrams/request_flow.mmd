@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor User
+    participant Client as CLI/TUI/GUI
+    participant Lib as mealplan_client
+    participant API as api.py
+    participant Repo as repository.py
+    participant Plan as planner.py
+    participant DB as SQLite
+
+    User->>Client: "show my shopping list"
+    Client->>Lib: shopping_list(start, end)
+    Lib->>API: GET /shopping-list?start&end
+    API->>Repo: list_planned_meals(start, end)
+    Repo->>DB: SELECT planned_meals
+    API->>Repo: recipes_by_id(ids)
+    Repo->>DB: SELECT recipes + ingredients
+    API->>Repo: list_pantry()
+    Repo->>DB: SELECT pantry_items
+    API->>Plan: shopping_list(meals, recipes, pantry)
+    Plan-->>API: items still needed
+    API-->>Lib: JSON list
+    Lib-->>Client: items
+    Client-->>User: rendered list

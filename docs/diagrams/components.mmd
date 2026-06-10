@@ -1,0 +1,20 @@
+graph TD
+    CLI[CLI]
+    TUI[TUI]
+    GUI[GUI]
+    LIB[mealplan_client]
+    API[api.py routes]
+    PLAN[planner.py]
+    REPO[repository.py]
+    DB[db.py]
+    SQLITE[(SQLite)]
+
+    CLI --> LIB
+    TUI --> LIB
+    GUI --> LIB
+    LIB -->|HTTP/JSON| API
+    API --> PLAN
+    API --> REPO
+    PLAN --> REPO
+    REPO --> DB
+    DB --> SQLITE

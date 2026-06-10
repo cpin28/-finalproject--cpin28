@@ -1,0 +1,35 @@
+erDiagram
+    INGREDIENTS ||--o{ RECIPE_INGREDIENTS : "used in"
+    RECIPES     ||--o{ RECIPE_INGREDIENTS : "has"
+    INGREDIENTS ||--o| PANTRY_ITEMS : "stocked as"
+    RECIPES     ||--o{ PLANNED_MEALS : "scheduled as"
+
+    INGREDIENTS {
+        int id PK
+        string name
+        string default_unit
+    }
+    RECIPES {
+        int id PK
+        string name
+        int servings
+        int prep_time_minutes
+    }
+    RECIPE_INGREDIENTS {
+        int recipe_id FK
+        int ingredient_id FK
+        real quantity
+        string unit
+    }
+    PANTRY_ITEMS {
+        int ingredient_id PK
+        real quantity
+        string unit
+    }
+    PLANNED_MEALS {
+        int id PK
+        string date
+        string meal_type
+        int recipe_id FK
+        int servings
+    }

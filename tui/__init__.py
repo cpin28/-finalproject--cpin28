@@ -1,0 +1,1 @@
+"""mealplan TUI client (textual)."""

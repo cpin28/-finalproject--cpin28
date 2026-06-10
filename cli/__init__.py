@@ -1,0 +1,1 @@
+"""mealplan command-line client."""

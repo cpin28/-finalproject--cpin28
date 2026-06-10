@@ -1,0 +1,30 @@
+%% Write path with validation: POST /plan. Shows where each error status originates —
+%% Pydantic (422 on shape), the router (422 on vocabulary), the repository (404 on a
+%% missing recipe) — before a successful 201.
+sequenceDiagram
+    actor User
+    participant Client as Client
+    participant Router as routers/plan
+    participant Schema as schemas (Pydantic)
+    participant Repo as repository/plan
+    participant DB as SQLite
+
+    Client->>Router: POST /plan {date, meal_type, recipe_id}
+    Router->>Schema: parse body -> PlannedMealCreate
+    alt body shape invalid
+        Schema-->>Client: 422 Unprocessable Entity
+    else meal_type not in MEAL_TYPES
+        Router-->>Client: 422 "meal_type must be one of ..."
+    else valid
+        Router->>Repo: create_planned_meal(data)
+        Repo->>DB: SELECT recipe (does it exist?)
+        alt recipe not found
+            Repo-->>Router: None
+            Router-->>Client: 404 "recipe not found"
+        else recipe exists
+            Repo->>DB: INSERT planned_meals
+            DB-->>Repo: new row id
+            Repo-->>Router: PlannedMeal
+            Router-->>Client: 201 Created + JSON
+        end
+    end

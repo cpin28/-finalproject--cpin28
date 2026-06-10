@@ -1,0 +1,78 @@
+%% The data contract: the Pydantic models in schemas.py that the API and every client
+%% share. *Input models (…Create/…Input) carry only what a caller supplies; read models
+%% add server-assigned fields (ids, joined names). Derived models are computed, not stored.
+classDiagram
+    class IngredientCreate {
+      +str name
+      +str default_unit
+    }
+    class Ingredient {
+      +int id
+    }
+    IngredientCreate <|-- Ingredient
+
+    class RecipeCreate {
+      +str name
+      +int servings
+      +int prep_time_minutes
+      +RecipeIngredientInput[] ingredients
+    }
+    class Recipe {
+      +int id
+      +RecipeIngredient[] ingredients
+    }
+    class RecipeIngredientInput {
+      +int ingredient_id
+      +float quantity
+      +str unit
+    }
+    class RecipeIngredient {
+      +int ingredient_id
+      +str name
+      +float quantity
+      +str unit
+    }
+    Recipe "1" *-- "many" RecipeIngredient : contains
+    RecipeCreate "1" *-- "many" RecipeIngredientInput : contains
+
+    class PantryItemInput {
+      +int ingredient_id
+      +float quantity
+      +str unit
+    }
+    class PantryItem {
+      +str name
+    }
+    PantryItemInput <|-- PantryItem
+
+    class PlannedMealCreate {
+      +str date
+      +str meal_type
+      +int recipe_id
+      +int servings
+    }
+    class PlannedMeal {
+      +int id
+      +str recipe_name
+    }
+    PlannedMealCreate <|-- PlannedMeal
+
+    class ShoppingListItem {
+      +int ingredient_id
+      +str name
+      +float quantity
+      +str unit
+    }
+    class CookCheck {
+      +int recipe_id
+      +bool can_make
+      +str[] missing
+    }
+    class RecipeSuggestion {
+      +int recipe_id
+      +str name
+      +bool can_make
+      +str[] missing
+      +int have_count
+      +int need_count
+    }

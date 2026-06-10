@@ -4,8 +4,9 @@ A personal **recipe & meal-planner**. Store recipes, track what's in your kitche
 the week's meals, and get a shopping list for whatever the plan needs that the pantry
 doesn't already cover.
 
-Built as a small **client–server** app: one SQLite-backed REST server, three front ends
-(CLI, TUI, GUI) over a shared client library, and a fully tested planning core.
+Built as a small **client–server** app: one SQLite-backed REST server, four front ends
+(CLI, TUI, GUI, and a browser web UI) over a shared client library, and a fully tested
+planning core.
 
 ## Quick start
 
@@ -27,6 +28,10 @@ uv run mealplan-tui                  # textual TUI
 uv run mealplan-gui                  # tkinter GUI
 ```
 
+Then open **http://127.0.0.1:8000/** in a browser for the **web UI** — the fullest
+client: browse recipes with a "can I make this?" check, edit the pantry, build the
+weekly plan, and generate the shopping list. (The API's Swagger docs are at `/docs`.)
+
 ## What it does
 
 - **Recipes** with ingredients, servings, prep time, instructions.
@@ -42,8 +47,9 @@ server/            REST server (FastAPI + SQLite)
   api.py           routes        planner.py   shopping-list / cook-check logic
   repository.py    all the SQL   schemas.py   shared data models
   db.py            connection    main.py      uvicorn entry
-mealplan_client/   shared HTTP client used by every front end
-cli/  tui/  gui/    the three clients
+mealplan_client/   shared HTTP client used by every Python front end
+cli/  tui/  gui/    the three Python clients
+static/            web UI (HTML/CSS/JS) served by the server at /
 migrations/        seed script
 tests/             unit / contract / integration
 docs/              requirements, architecture, design, testing, diagrams

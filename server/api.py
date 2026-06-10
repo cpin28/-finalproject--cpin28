@@ -10,13 +10,17 @@ from __future__ import annotations
 import os
 import sqlite3
 from collections.abc import Iterator
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import planner, repository, schemas
 from .db import connect, init_db
 
 DEFAULT_DB = os.environ.get("MEALPLAN_DB", "mealplan.db")
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 
 def get_conn(request: Request) -> Iterator[sqlite3.Connection]:
@@ -119,5 +123,13 @@ def create_app(db_path: str = DEFAULT_DB) -> FastAPI:
         recipes = repository.recipes_by_id(conn, {m.recipe_id for m in meals})
         pantry = repository.list_pantry(conn)
         return planner.shopping_list(meals, recipes, pantry)
+
+    # --- Web client: serve the static single-page app ---
+    if STATIC_DIR.is_dir():
+        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+        @app.get("/", include_in_schema=False)
+        def index():
+            return FileResponse(STATIC_DIR / "index.html")
 
     return app

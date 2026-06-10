@@ -2,6 +2,7 @@ graph TD
     CLI[CLI]
     TUI[TUI]
     GUI[GUI]
+    WEB[Web UI static/]
     LIB[mealplan_client]
     API[api.py routes]
     PLAN[planner.py]
@@ -13,6 +14,7 @@ graph TD
     TUI --> LIB
     GUI --> LIB
     LIB -->|HTTP/JSON| API
+    WEB -->|HTTP/JSON fetch| API
     API --> PLAN
     API --> REPO
     PLAN --> REPO

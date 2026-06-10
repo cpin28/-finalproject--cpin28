@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>mealplan</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header>
+    <h1>🍳 mealplan</h1>
+    <nav id="tabs">
+      <button data-tab="recipes" class="active">Recipes</button>
+      <button data-tab="pantry">Pantry</button>
+      <button data-tab="plan">Weekly plan</button>
+      <button data-tab="shopping">Shopping list</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- Recipes -->
+    <section id="recipes" class="tab active">
+      <div class="two-col">
+        <div class="col">
+          <input id="recipe-search" type="search" placeholder="Search recipes…">
+          <ul id="recipe-list" class="list"></ul>
+        </div>
+        <div class="col">
+          <div id="recipe-detail" class="detail"><p class="muted">Select a recipe.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Pantry -->
+    <section id="pantry" class="tab">
+      <form id="pantry-form" class="row">
+        <select id="pantry-ingredient" required></select>
+        <input id="pantry-qty" type="number" step="any" min="0" placeholder="qty" required>
+        <input id="pantry-unit" type="text" placeholder="unit" required>
+        <button type="submit">Set</button>
+      </form>
+      <table id="pantry-table" class="table">
+        <thead><tr><th>Ingredient</th><th>Qty</th><th>Unit</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <!-- Weekly plan -->
+    <section id="plan" class="tab">
+      <form id="plan-form" class="row">
+        <input id="plan-date" type="date" required>
+        <select id="plan-meal">
+          <option>breakfast</option><option>lunch</option><option>dinner</option><option>snack</option>
+        </select>
+        <select id="plan-recipe" required></select>
+        <button type="submit">Add to plan</button>
+      </form>
+      <div id="plan-grid" class="grid"></div>
+    </section>
+
+    <!-- Shopping list -->
+    <section id="shopping" class="tab">
+      <form id="shopping-form" class="row">
+        <label>From <input id="shop-start" type="date"></label>
+        <label>To <input id="shop-end" type="date"></label>
+        <button type="submit">Generate</button>
+      </form>
+      <ul id="shopping-list" class="list checklist"></ul>
+    </section>
+  </main>
+
+  <p id="status" class="status"></p>
+  <script src="/static/app.js"></script>
+</body>
+</html>

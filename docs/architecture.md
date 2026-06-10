@@ -3,15 +3,18 @@
 ## Overview
 
 A client–server application. A single FastAPI server owns an SQLite database and exposes
-a REST API. Three clients (CLI, TUI, GUI) talk to it through one shared client library.
+a REST API. Three Python clients (CLI, TUI, GUI) talk to it through one shared client
+library; a fourth client — a browser web UI — is static files served by the server and
+calls the same REST API directly with `fetch`.
 
 ```
- ┌────────┐   ┌────────┐   ┌────────┐
- │  CLI   │   │  TUI   │   │  GUI   │        clients (presentation only)
- └───┬────┘   └───┬────┘   └───┬────┘
-     └────────────┼────────────┘
-            mealplan_client (httpx)         one place that knows the wire protocol
-                  │  HTTP/JSON
+ ┌────────┐   ┌────────┐   ┌────────┐      ┌──────────┐
+ │  CLI   │   │  TUI   │   │  GUI   │      │  Web UI  │   (static/, fetch)
+ └───┬────┘   └───┬────┘   └───┬────┘      └────┬─────┘
+     └────────────┼────────────┘                │
+            mealplan_client (httpx)             │  HTTP/JSON
+                  │  HTTP/JSON                   │
+                  └───────────────┬─────────────┘
             ┌─────▼─────┐
             │  api.py   │   FastAPI routes — validate, delegate, return schemas
             ├───────────┤

@@ -34,7 +34,7 @@ calls the same REST API directly with `fetch`.
 | Module | Responsibility | Depends on |
 |---|---|---|
 | `db.py` | connection + schema | sqlite3 |
-| `repository.py` | CRUD, all SQL | db, schemas |
+| `repository/` | CRUD, all SQL — one module per entity | db, schemas |
 | `planner.py` | shopping list, cook check — pure logic | schemas |
 | `schemas.py` | wire/data models (Pydantic) | — |
 | `deps.py` | shared FastAPI dependency (per-request connection) | db |
@@ -45,10 +45,13 @@ calls the same REST API directly with `fetch`.
 The dependency arrows only point downward. `planner` has no I/O, which is what lets the
 unit tests run it with hand-built objects and no database.
 
-The route layer is split per resource — `routers/ingredients.py`, `recipes.py`,
-`pantry.py`, `plan.py`, `shopping.py` — each exposing an `APIRouter` that `api.py`
-includes. (This was refactored out of a single monolithic `create_app()`; see the
-git history.) Adding a resource is a new router module plus one `include_router` line.
+Both the route layer and the data layer are split per resource. `routers/` has one
+`APIRouter` module per resource (`ingredients`, `recipes`, `pantry`, `plan`,
+`shopping`) that `api.py` includes; `repository/` has one SQL module per entity, with
+`__init__.py` re-exporting the functions so callers still write `repository.create_recipe(...)`.
+(Both were refactored out of single monolithic modules — a ~135-line `create_app()` and a
+~190-line `repository.py`; see the git history.) Adding a resource is now a new router
+module plus a new repository module — each small and focused.
 
 ## Data model
 

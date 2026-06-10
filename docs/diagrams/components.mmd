@@ -1,22 +1,44 @@
+%% Component view: the four clients, the single server process, and storage.
 graph TD
-    CLI[CLI]
-    TUI[TUI]
-    GUI[GUI]
-    WEB[Web UI static/]
-    LIB[mealplan_client]
-    API[api.py routes]
-    PLAN[planner.py]
-    REPO[repository.py]
-    DB[db.py]
-    SQLITE[(SQLite)]
+    subgraph Clients["Clients (separate programs)"]
+        CLI[CLI<br/>mealplan]
+        TUI[TUI<br/>textual]
+        GUI[GUI<br/>tkinter]
+        WEB[Web UI<br/>browser · static/]
+    end
+
+    LIB[mealplan_client<br/>httpx · the wire protocol]
+
+    subgraph Server["mealplan-server — one process (FastAPI + uvicorn)"]
+        direction TB
+        ROUTERS["routers/<br/>ingredients · recipes · pantry · plan · shopping"]
+        subgraph Logic["domain logic — pure, no I/O"]
+            PLAN[planner.py<br/>shopping list · cook check · suggestions]
+            SEARCH[search.py<br/>fuzzy ranking]
+        end
+        REPO["repository/<br/>ingredients · recipes · pantry · plan — all SQL"]
+        DB[db.py<br/>connection + schema]
+        SCHEMAS[schemas.py<br/>shared models]
+    end
+
+    STORE[(SQLite<br/>mealplan.db)]
 
     CLI --> LIB
     TUI --> LIB
     GUI --> LIB
-    LIB -->|HTTP/JSON| API
-    WEB -->|HTTP/JSON fetch| API
-    API --> PLAN
-    API --> REPO
+    LIB -->|HTTP / JSON| ROUTERS
+    WEB -->|HTTP / JSON via fetch| ROUTERS
+
+    ROUTERS --> PLAN
+    ROUTERS --> SEARCH
+    ROUTERS --> REPO
     PLAN --> REPO
     REPO --> DB
-    DB --> SQLITE
+    DB --> STORE
+
+    SCHEMAS -. shared contract .- ROUTERS
+    SCHEMAS -.-> PLAN
+    SCHEMAS -.-> REPO
+
+    classDef pure fill:#eef7ee,stroke:#2e7d32,color:#1b5e20;
+    class PLAN,SEARCH pure;

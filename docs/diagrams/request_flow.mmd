@@ -1,23 +1,26 @@
+%% Request flow for the derived shopping list — shows routes delegating to the
+%% repository (reads) and the planner (pure computation), then returning JSON.
 sequenceDiagram
     actor User
-    participant Client as CLI/TUI/GUI
-    participant Lib as mealplan_client
-    participant API as api.py
-    participant Repo as repository.py
+    participant Client as Client (CLI/TUI/GUI/Web)
+    participant Lib as mealplan_client / fetch
+    participant Router as routers/shopping
+    participant Repo as repository/
     participant Plan as planner.py
     participant DB as SQLite
 
     User->>Client: "show my shopping list"
     Client->>Lib: shopping_list(start, end)
-    Lib->>API: GET /shopping-list?start&end
-    API->>Repo: list_planned_meals(start, end)
+    Lib->>Router: GET /shopping-list?start&end
+    Router->>Repo: list_planned_meals(start, end)
     Repo->>DB: SELECT planned_meals
-    API->>Repo: recipes_by_id(ids)
+    Router->>Repo: recipes_by_id(ids)
     Repo->>DB: SELECT recipes + ingredients
-    API->>Repo: list_pantry()
+    Router->>Repo: list_pantry()
     Repo->>DB: SELECT pantry_items
-    API->>Plan: shopping_list(meals, recipes, pantry)
-    Plan-->>API: items still needed
-    API-->>Lib: JSON list
+    Router->>Plan: shopping_list(meals, recipes, pantry)
+    Note over Plan: pure function —<br/>aggregate needs, subtract pantry
+    Plan-->>Router: items still needed
+    Router-->>Lib: JSON list
     Lib-->>Client: items
     Client-->>User: rendered list

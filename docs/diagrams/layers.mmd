@@ -1,0 +1,26 @@
+%% Layered dependency view. Every arrow points DOWNWARD — a lower layer never
+%% imports a higher one. This is the rule that keeps the logic testable and the
+%% storage swappable.
+graph TD
+    REST{{"Clients reach the server only over REST<br/>(CLI/TUI/GUI via mealplan_client, Web via fetch)"}}
+    REST --> ROUTERS
+
+    ROUTERS["routers/ &nbsp;—&nbsp; HTTP layer<br/>validate input, delegate, return schemas"]
+    LOGIC["planner.py · search.py &nbsp;—&nbsp; domain logic<br/>pure functions, no database"]
+    REPO["repository/ &nbsp;—&nbsp; data access<br/>every SQL statement lives here"]
+    DBMOD["db.py &nbsp;—&nbsp; storage adapter<br/>the only module that imports sqlite3"]
+    SQLITE[("SQLite database")]
+    SCHEMAS["schemas.py &nbsp;—&nbsp; shared contract (Pydantic models)"]
+
+    ROUTERS --> LOGIC
+    ROUTERS --> REPO
+    LOGIC --> REPO
+    REPO --> DBMOD
+    DBMOD --> SQLITE
+
+    SCHEMAS -. imported by all layers .- ROUTERS
+    SCHEMAS -.-> LOGIC
+    SCHEMAS -.-> REPO
+
+    classDef pure fill:#eef7ee,stroke:#2e7d32,color:#1b5e20;
+    class LOGIC pure;

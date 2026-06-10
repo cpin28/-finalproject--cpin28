@@ -1,0 +1,10 @@
+%% The test pyramid: many fast unit tests at the base, fewer broad integration tests
+%% at the top. Counts reflect the current suite (62 total).
+graph TD
+    classDef tier fill:#eef2ff,stroke:#4f46e5,color:#1e1b4b;
+
+    I["Integration — 8 tests<br/>repository ↔ real SQLite · client ↔ live server · TUI pilot · GUI smoke<br/>(slowest, broadest, fewest)"]:::tier
+    C["Contract — 14 tests<br/>REST status codes &amp; response shapes · web client served + endpoint agreement"]:::tier
+    U["Unit — 40 tests<br/>planner · unit conversion (TDD) · fuzzy search · CLI parsing · client request building<br/>(fastest, most numerous)"]:::tier
+
+    I --- C --- U

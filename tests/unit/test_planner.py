@@ -72,3 +72,20 @@ def test_shopping_list_sorted_by_name():
     r = recipe(1, "Mix", 1, [(2, "zucchini", 1, "unit"), (1, "apple", 1, "unit")])
     items = planner.shopping_list([meal(1, 1, 1)], {1: r}, [])
     assert [i.name for i in items] == ["apple", "zucchini"]
+
+
+def test_suggestions_rank_makeable_first_then_fewest_missing():
+    r1 = recipe(1, "Makeable", 1, [(10, "egg", 2, "unit")])
+    r2 = recipe(2, "OneMissing", 1, [(10, "egg", 2, "unit"), (11, "milk", 50, "ml")])
+    r3 = recipe(3, "TwoMissing", 1, [(11, "milk", 50, "ml"), (12, "flour", 100, "g")])
+    have = pantry([(10, "egg", 6, "unit")])
+    suggestions = planner.suggest_recipes([r3, r2, r1], have)
+    assert [s.name for s in suggestions] == ["Makeable", "OneMissing", "TwoMissing"]
+    assert suggestions[0].can_make is True
+    assert suggestions[1].missing == ["milk"]
+
+
+def test_suggestion_counts():
+    r = recipe(1, "Omelette", 1, [(10, "egg", 3, "unit"), (11, "milk", 50, "ml")])
+    [s] = planner.suggest_recipes([r], pantry([(10, "egg", 6, "unit")]))
+    assert s.need_count == 2 and s.have_count == 1 and s.missing == ["milk"]

@@ -11,6 +11,7 @@
     <h1>🍳 mealplan</h1>
     <nav id="tabs">
       <button data-tab="recipes" class="active">Recipes</button>
+      <button data-tab="suggest">Suggestions</button>
       <button data-tab="pantry">Pantry</button>
       <button data-tab="plan">Weekly plan</button>
       <button data-tab="shopping">Shopping list</button>
@@ -29,6 +30,12 @@
           <div id="recipe-detail" class="detail"><p class="muted">Select a recipe.</p></div>
         </div>
       </div>
+    </section>
+
+    <!-- Suggestions -->
+    <section id="suggest" class="tab">
+      <p class="muted">Recipes ranked by what your pantry can cover — fully makeable first.</p>
+      <ul id="suggest-list" class="list"></ul>
     </section>
 
     <!-- Pantry -->

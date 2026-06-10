@@ -62,6 +62,39 @@ def test_shopping_list_shape_reflects_pantry(client):
     assert items[0] == {"ingredient_id": flour["id"], "name": "flour", "quantity": 300, "unit": "g"}
 
 
+def test_recipe_search_ranks_and_filters(client):
+    flour = _ingredient(client, "flour", "g")
+    body = lambda name: {"name": name, "servings": 1, "ingredients": [{"ingredient_id": flour["id"], "quantity": 1, "unit": "g"}]}
+    for name in ("Tomato Pasta", "Chicken Pasta", "Pancakes"):
+        client.post("/recipes", json=body(name))
+    results = client.get("/recipes/search", params={"q": "pasta"}).json()
+    names = [r["name"] for r in results]
+    assert "Pancakes" not in names
+    assert set(names) == {"Tomato Pasta", "Chicken Pasta"}
+
+
+def test_recipe_search_path_not_shadowed_by_id_route(client):
+    # "/recipes/search" must hit the search route, not "/recipes/{recipe_id}" -> 422
+    assert client.get("/recipes/search", params={"q": "x"}).status_code == 200
+
+
+def test_suggestions_endpoint_orders_by_pantry_coverage(client):
+    egg = _ingredient(client, "egg")
+    milk = _ingredient(client, "milk", "ml")
+    makeable = client.post("/recipes", json={"name": "Boiled Egg", "servings": 1,
+        "ingredients": [{"ingredient_id": egg["id"], "quantity": 1, "unit": "unit"}]}).json()
+    needs_milk = client.post("/recipes", json={"name": "Omelette", "servings": 1,
+        "ingredients": [{"ingredient_id": egg["id"], "quantity": 2, "unit": "unit"},
+                        {"ingredient_id": milk["id"], "quantity": 50, "unit": "ml"}]}).json()
+    client.put("/pantry", json={"ingredient_id": egg["id"], "quantity": 6, "unit": "unit"})
+
+    suggestions = client.get("/recipes/suggestions").json()
+    assert [s["name"] for s in suggestions] == ["Boiled Egg", "Omelette"]
+    assert suggestions[0]["can_make"] is True
+    assert suggestions[1]["missing"] == ["milk"]
+    assert suggestions[1]["have_count"] == 1 and suggestions[1]["need_count"] == 2
+
+
 def test_can_make_endpoint(client):
     egg = _ingredient(client, "egg")
     recipe = client.post("/recipes", json={"name": "Omelette", "servings": 1,

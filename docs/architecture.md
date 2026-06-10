@@ -35,7 +35,8 @@ calls the same REST API directly with `fetch`.
 |---|---|---|
 | `db.py` | connection + schema | sqlite3 |
 | `repository/` | CRUD, all SQL — one module per entity | db, schemas |
-| `planner.py` | shopping list, cook check — pure logic | schemas |
+| `planner.py` | shopping list, cook check, pantry suggestions — pure logic | schemas |
+| `search.py` | fuzzy recipe-name scoring & ranking — pure logic | schemas |
 | `schemas.py` | wire/data models (Pydantic) | — |
 | `deps.py` | shared FastAPI dependency (per-request connection) | db |
 | `routers/` | HTTP routes, one module per resource | repository, planner, schemas, deps |
@@ -67,6 +68,8 @@ module plus a new repository module — each small and focused.
 |---|---|
 | `GET/POST /ingredients` | list / create ingredients |
 | `GET/POST /recipes`, `GET/DELETE /recipes/{id}` | manage recipes (`?q=` filters by name) |
+| `GET /recipes/search?q=` | fuzzy-ranked recipe search (`search.py`) |
+| `GET /recipes/suggestions` | recipes ranked by pantry coverage (`planner.suggest_recipes`) |
 | `GET /recipes/{id}/can-make` | cook check against the pantry |
 | `GET /pantry`, `PUT /pantry`, `DELETE /pantry/{ingredient_id}` | pantry stock |
 | `GET/POST /plan`, `DELETE /plan/{id}` | weekly meal plan (`?start=&end=`) |

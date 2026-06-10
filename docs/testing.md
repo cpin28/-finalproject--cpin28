@@ -14,8 +14,10 @@ tests/
 
 The planner is the most interesting code, so it gets the most cases: scaling by
 servings, aggregating an ingredient across multiple meals, subtracting pantry stock,
-the same-unit rule, the cook check, and output ordering. No database — objects are built
-by hand, so these tests are fast and pin the behaviour precisely.
+the same-unit rule, the cook check, pantry-suggestion ranking, and output ordering. No
+database — objects are built by hand, so these tests are fast and pin the behaviour
+precisely. `test_search.py` covers the fuzzy scorer the same way (exact/prefix/substring/
+subsequence tiers, ordering, and non-matches scoring zero).
 
 ## Contract (`tests/contract/test_api_contract.py`)
 

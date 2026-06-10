@@ -44,6 +44,8 @@ row; the GUI and web UI have explicit remove buttons.
 - **Weekly plan** — assign recipes to date + meal-type slots.
 - **Shopping list** — totals the plan's ingredients, subtracts the pantry, lists the rest.
 - **Cook check** — "can I make this right now?" with the missing ingredients.
+- **Fuzzy search** — find recipes by approximate name (exact > prefix > substring > subsequence).
+- **Suggestions** — "what can I make?": recipes ranked by how well the pantry covers them.
 
 ## Layout
 

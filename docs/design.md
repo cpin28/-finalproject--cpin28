@@ -39,7 +39,15 @@ Recipes and the pantry reference ingredients by id rather than by free-text name
 "flour" in a recipe and "flour" in the pantry are guaranteed to be the same thing. This
 is what makes pantry subtraction reliable.
 
-## 6. SQLite + a connection per request
+## 6. Fuzzy search and suggestions are pure logic, kept out of SQL
+
+Recipe search could have stayed a SQL `LIKE`, but approximate matching (subsequence,
+compactness ranking) doesn't express well in SQL and isn't unit-testable in isolation.
+So `search.py` scores in Python over recipes the repository returns — same reasoning as
+`planner`: pure functions, exhaustively testable, no database. "What can I make?"
+(`planner.suggest_recipes`) is likewise derived from recipes + pantry, never stored.
+
+## 7. SQLite + a connection per request
 
 The API opens a short-lived connection per request (via a FastAPI dependency) and closes
 it after. Simple, thread-safe, and fine at this scale; no pooling needed.

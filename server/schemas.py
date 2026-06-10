@@ -103,3 +103,12 @@ class CookCheck(BaseModel):
     recipe_id: int
     can_make: bool
     missing: list[str] = []
+
+
+class RecipeSuggestion(BaseModel):
+    recipe_id: int
+    name: str
+    can_make: bool
+    missing: list[str] = []
+    have_count: int   # ingredients the pantry covers
+    need_count: int   # total ingredients in the recipe

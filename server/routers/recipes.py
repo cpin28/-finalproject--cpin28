@@ -6,7 +6,7 @@ import sqlite3
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from .. import planner, repository, schemas
+from .. import planner, repository, schemas, search
 from ..deps import get_conn
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
@@ -20,6 +20,21 @@ def list_recipes(q: str | None = None, conn: sqlite3.Connection = Depends(get_co
 @router.post("", response_model=schemas.Recipe, status_code=201)
 def create_recipe(data: schemas.RecipeCreate, conn: sqlite3.Connection = Depends(get_conn)):
     return repository.create_recipe(conn, data)
+
+
+# Literal paths must be declared before the /{recipe_id} routes so they aren't
+# swallowed by the int path-param (which would 422 on "search"/"suggestions").
+@router.get("/search", response_model=list[schemas.Recipe])
+def search_recipes(q: str, limit: int = 10, conn: sqlite3.Connection = Depends(get_conn)):
+    ranked = search.rank_recipes(q, repository.list_recipes(conn))
+    return [recipe for _score, recipe in ranked[:limit]]
+
+
+@router.get("/suggestions", response_model=list[schemas.RecipeSuggestion])
+def suggestions(limit: int = 10, conn: sqlite3.Connection = Depends(get_conn)):
+    recipes = repository.list_recipes(conn)
+    pantry = repository.list_pantry(conn)
+    return planner.suggest_recipes(recipes, pantry)[:limit]
 
 
 @router.get("/{recipe_id}", response_model=schemas.Recipe)

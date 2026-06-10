@@ -29,8 +29,19 @@ def cmd_ingredients(client: MealPlanClient, args: argparse.Namespace) -> int:
 
 
 def cmd_recipes(client: MealPlanClient, args: argparse.Namespace) -> int:
-    for r in client.list_recipes(args.search):
+    recipes = client.search_recipes(args.search) if args.search else client.list_recipes()
+    for r in recipes:
         print(f"{r['id']:>3}  {r['name']}  ({r['servings']} servings, {r['prep_time_minutes']}m)")
+    return 0
+
+
+def cmd_suggestions(client: MealPlanClient, args: argparse.Namespace) -> int:
+    suggestions = client.suggest_recipes(args.limit)
+    for s in suggestions:
+        if s["can_make"]:
+            print(f"✓ {s['name']}  — ready to cook")
+        else:
+            print(f"  {s['name']}  — have {s['have_count']}/{s['need_count']}, missing: {', '.join(s['missing'])}")
     return 0
 
 
@@ -89,9 +100,13 @@ def build_parser() -> argparse.ArgumentParser:
     pi.add_argument("--unit", help="default unit for --add")
     pi.set_defaults(func=cmd_ingredients)
 
-    pr = sub.add_parser("recipes", help="list recipes")
-    pr.add_argument("--search", help="filter by name substring")
+    pr = sub.add_parser("recipes", help="list or fuzzy-search recipes")
+    pr.add_argument("--search", help="fuzzy-match recipes by name")
     pr.set_defaults(func=cmd_recipes)
+
+    psug = sub.add_parser("suggestions", help="recipes you can make (or nearly make) from your pantry")
+    psug.add_argument("--limit", type=int, default=10, help="max suggestions")
+    psug.set_defaults(func=cmd_suggestions)
 
     prc = sub.add_parser("recipe", help="show one recipe")
     prc.add_argument("id", type=int)

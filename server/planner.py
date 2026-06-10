@@ -101,3 +101,25 @@ def can_make(
     servings: int | None = None,
 ) -> bool:
     return not missing_for_recipe(recipe, pantry_items, servings)
+
+
+def suggest_recipes(
+    recipes: list[schemas.Recipe],
+    pantry_items: list[schemas.PantryItem],
+) -> list[schemas.RecipeSuggestion]:
+    """Rank recipes by how well the pantry covers them.
+
+    Fully-makeable recipes come first, then those missing the fewest ingredients; ties
+    break alphabetically. This is the "what can I make right now?" feature, and it's pure
+    logic on top of `missing_for_recipe`, so it's straightforward to unit test.
+    """
+    suggestions: list[schemas.RecipeSuggestion] = []
+    for r in recipes:
+        missing = missing_for_recipe(r, pantry_items)
+        need = len(r.ingredients)
+        suggestions.append(schemas.RecipeSuggestion(
+            recipe_id=r.id, name=r.name, can_make=not missing,
+            missing=missing, have_count=need - len(missing), need_count=need,
+        ))
+    suggestions.sort(key=lambda s: (len(s.missing), s.name.lower()))
+    return suggestions

@@ -39,7 +39,7 @@ document.querySelectorAll("#tabs button").forEach((btn) => {
 async function loadRecipes() {
   const q = $("#recipe-search").value.trim();
   try {
-    const recipes = await api("/recipes" + (q ? `?q=${encodeURIComponent(q)}` : ""));
+    const recipes = await api(q ? `/recipes/search?q=${encodeURIComponent(q)}` : "/recipes");
     const list = $("#recipe-list");
     list.innerHTML = "";
     recipes.forEach((r) => {
@@ -78,6 +78,25 @@ async function showRecipe(r) {
 }
 
 $("#recipe-search").addEventListener("input", loadRecipes);
+
+// --- Suggestions --------------------------------------------------------
+async function loadSuggestions() {
+  try {
+    const suggestions = await api("/recipes/suggestions");
+    const list = $("#suggest-list");
+    list.innerHTML = "";
+    suggestions.forEach((s) => {
+      const li = document.createElement("li");
+      const badge = s.can_make
+        ? '<span class="badge ok">✓ ready to cook</span>'
+        : `<span class="badge warn">have ${s.have_count}/${s.need_count} · missing: ${s.missing.join(", ")}</span>`;
+      li.innerHTML = `<strong>${s.name}</strong> &nbsp; ${badge}`;
+      li.style.cursor = "default";
+      list.appendChild(li);
+    });
+    if (!suggestions.length) list.innerHTML = '<li class="muted">No recipes yet.</li>';
+  } catch (e) { status(e.message, true); }
+}
 
 // --- Pantry -------------------------------------------------------------
 async function loadPantry() {
@@ -198,7 +217,7 @@ $("#shopping-form").addEventListener("submit", async (e) => {
   } catch (e) { status(e.message, true); }
 });
 
-const LOADERS = { recipes: loadRecipes, pantry: loadPantry, plan: loadPlan, shopping: () => {} };
+const LOADERS = { recipes: loadRecipes, suggest: loadSuggestions, pantry: loadPantry, plan: loadPlan, shopping: () => {} };
 
 // Initial load
 loadRecipes();

@@ -40,6 +40,12 @@ class MealPlanClient:
     def list_recipes(self, q: str | None = None) -> list[dict]:
         return self._json(self._http.get("/recipes", params={"q": q} if q else None))
 
+    def search_recipes(self, q: str, limit: int = 10) -> list[dict]:
+        return self._json(self._http.get("/recipes/search", params={"q": q, "limit": limit}))
+
+    def suggest_recipes(self, limit: int = 10) -> list[dict]:
+        return self._json(self._http.get("/recipes/suggestions", params={"limit": limit}))
+
     def get_recipe(self, recipe_id: int) -> dict:
         return self._json(self._http.get(f"/recipes/{recipe_id}"))
 

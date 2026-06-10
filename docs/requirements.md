@@ -20,6 +20,10 @@ needs that the pantry doesn't already cover.
    meals need, subtract what the pantry holds, and list the remainder.
 6. **Cook check** (derived) — for a recipe, report whether the pantry can cover it and,
    if not, which ingredients are missing.
+7. **Fuzzy search** — find recipes by an approximate name match (exact > prefix >
+   substring > subsequence), not just exact substrings.
+8. **Pantry suggestions** (derived) — "what can I make?": rank recipes by how well the
+   pantry covers them, fully-makeable first, then fewest missing ingredients.
 
 ## Non-functional requirements
 

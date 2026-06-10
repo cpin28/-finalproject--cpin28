@@ -37,11 +37,18 @@ calls the same REST API directly with `fetch`.
 | `repository.py` | CRUD, all SQL | db, schemas |
 | `planner.py` | shopping list, cook check — pure logic | schemas |
 | `schemas.py` | wire/data models (Pydantic) | — |
-| `api.py` | HTTP routes | repository, planner, schemas |
+| `deps.py` | shared FastAPI dependency (per-request connection) | db |
+| `routers/` | HTTP routes, one module per resource | repository, planner, schemas, deps |
+| `api.py` | app assembly: include routers + serve web client | routers, db |
 | `main.py` | uvicorn entry | api |
 
 The dependency arrows only point downward. `planner` has no I/O, which is what lets the
 unit tests run it with hand-built objects and no database.
+
+The route layer is split per resource — `routers/ingredients.py`, `recipes.py`,
+`pantry.py`, `plan.py`, `shopping.py` — each exposing an `APIRouter` that `api.py`
+includes. (This was refactored out of a single monolithic `create_app()`; see the
+git history.) Adding a resource is a new router module plus one `include_router` line.
 
 ## Data model
 

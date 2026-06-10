@@ -20,6 +20,12 @@ from .recipes import (
     list_recipes,
     recipes_by_id,
 )
+from .substitutions import (
+    create_substitution,
+    delete_substitution,
+    list_substitutions,
+    substitutions_map,
+)
 
 __all__ = [
     "create_ingredient",
@@ -36,4 +42,8 @@ __all__ = [
     "create_planned_meal",
     "delete_planned_meal",
     "list_planned_meals",
+    "create_substitution",
+    "delete_substitution",
+    "list_substitutions",
+    "substitutions_map",
 ]

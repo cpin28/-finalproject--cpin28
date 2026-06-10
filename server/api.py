@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from .db import connect, init_db
-from .routers import ingredients, pantry, plan, recipes, shopping
+from .routers import ingredients, pantry, plan, recipes, shopping, substitutions
 
 DEFAULT_DB = os.environ.get("MEALPLAN_DB", "mealplan.db")
 STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
@@ -30,7 +30,7 @@ def create_app(db_path: str = DEFAULT_DB) -> FastAPI:
     init_db(boot)
     boot.close()
 
-    for module in (ingredients, recipes, pantry, plan, shopping):
+    for module in (ingredients, recipes, pantry, plan, shopping, substitutions):
         app.include_router(module.router)
 
     # Serve the static single-page web client.

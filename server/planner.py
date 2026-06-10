@@ -119,23 +119,90 @@ def can_make(
     return not missing_for_recipe(recipe, pantry_items, servings)
 
 
+Substitutions = dict[int, list[schemas.Substitution]]
+
+
+def _evaluate(
+    recipe: schemas.Recipe,
+    pantry_items: list[schemas.PantryItem],
+    substitutions: Substitutions | None,
+    servings: int | None = None,
+) -> tuple[list[str], list[schemas.SubstitutionOption]]:
+    """For one recipe, return (still-missing names, substitution swaps the pantry enables).
+
+    An ingredient that the pantry can't cover directly is filled by the first listed
+    substitute the pantry has (presence-based — the ratio/note guide the cook); if none,
+    it stays missing.
+    """
+    have: dict[tuple[int, str], float] = defaultdict(float)
+    have_ids: set[int] = set()
+    for p in pantry_items:
+        qty, unit = _canonical(p.quantity, p.unit)
+        have[(p.ingredient_id, unit)] += qty
+        if p.quantity > 0:
+            have_ids.add(p.ingredient_id)
+
+    base = recipe.servings or 1
+    scale = (servings or base) / base
+    missing: list[str] = []
+    options: list[schemas.SubstitutionOption] = []
+    for ri in recipe.ingredients:
+        need, unit = _canonical(ri.quantity * scale, ri.unit)
+        if have.get((ri.ingredient_id, unit), 0.0) + 1e-9 >= need:
+            continue  # covered directly
+        option = None
+        for sub in (substitutions or {}).get(ri.ingredient_id, []):
+            if sub.substitute_id in have_ids:
+                option = schemas.SubstitutionOption(
+                    missing=ri.name, use_instead=sub.substitute_name, ratio=sub.ratio, note=sub.note)
+                break
+        if option is not None:
+            options.append(option)
+        else:
+            missing.append(ri.name)
+    return missing, options
+
+
+def cook_status(
+    recipe: schemas.Recipe,
+    pantry_items: list[schemas.PantryItem],
+    substitutions: Substitutions | None = None,
+    servings: int | None = None,
+) -> schemas.CookCheck:
+    """The cook check, now substitution-aware."""
+    missing, options = _evaluate(recipe, pantry_items, substitutions, servings)
+    return schemas.CookCheck(
+        recipe_id=recipe.id,
+        can_make=not missing and not options,
+        missing=missing,
+        can_make_with_substitutions=not missing,
+        substitutions=options,
+    )
+
+
 def suggest_recipes(
     recipes: list[schemas.Recipe],
     pantry_items: list[schemas.PantryItem],
+    substitutions: Substitutions | None = None,
 ) -> list[schemas.RecipeSuggestion]:
     """Rank recipes by how well the pantry covers them.
 
-    Fully-makeable recipes come first, then those missing the fewest ingredients; ties
-    break alphabetically. This is the "what can I make right now?" feature, and it's pure
-    logic on top of `missing_for_recipe`, so it's straightforward to unit test.
+    Order: makeable now, then makeable with a substitution, then fewest still-missing;
+    ties break alphabetically. Pure logic, so it's straightforward to unit test.
     """
     suggestions: list[schemas.RecipeSuggestion] = []
     for r in recipes:
-        missing = missing_for_recipe(r, pantry_items)
+        missing, options = _evaluate(r, pantry_items, substitutions)
         need = len(r.ingredients)
         suggestions.append(schemas.RecipeSuggestion(
-            recipe_id=r.id, name=r.name, can_make=not missing,
-            missing=missing, have_count=need - len(missing), need_count=need,
+            recipe_id=r.id, name=r.name, difficulty=r.difficulty,
+            can_make=not missing and not options,
+            can_make_with_substitutions=not missing,
+            missing=missing, substitutions=options,
+            have_count=need - len(missing) - len(options), need_count=need,
         ))
-    suggestions.sort(key=lambda s: (len(s.missing), s.name.lower()))
+    suggestions.sort(key=lambda s: (
+        0 if s.can_make else 1 if s.can_make_with_substitutions else 2,
+        len(s.missing), s.name.lower(),
+    ))
     return suggestions

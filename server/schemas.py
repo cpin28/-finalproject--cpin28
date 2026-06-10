@@ -10,6 +10,7 @@ from __future__ import annotations
 from pydantic import BaseModel, Field
 
 MEAL_TYPES = ("breakfast", "lunch", "dinner", "snack")
+DIFFICULTIES = ("beginner", "easy", "intermediate")
 
 
 # --- Ingredients ---------------------------------------------------------
@@ -44,6 +45,7 @@ class RecipeCreate(BaseModel):
     instructions: str = ""
     servings: int = Field(default=1, ge=1)
     prep_time_minutes: int = Field(default=0, ge=0)
+    difficulty: str = "beginner"
     ingredients: list[RecipeIngredientInput] = []
 
 
@@ -54,6 +56,7 @@ class Recipe(BaseModel):
     instructions: str = ""
     servings: int = 1
     prep_time_minutes: int = 0
+    difficulty: str = "beginner"
     ingredients: list[RecipeIngredient] = []
 
 
@@ -99,16 +102,49 @@ class ShoppingListItem(BaseModel):
     unit: str
 
 
+# --- Substitutions -------------------------------------------------------
+
+class SubstitutionInput(BaseModel):
+    ingredient_id: int
+    substitute_id: int
+    ratio: float = 1.0   # amount of substitute per unit of the original
+    note: str = ""
+
+
+class Substitution(BaseModel):
+    ingredient_id: int
+    ingredient_name: str
+    substitute_id: int
+    substitute_name: str
+    ratio: float = 1.0
+    note: str = ""
+
+
+class SubstitutionOption(BaseModel):
+    """A swap the pantry makes possible for a missing ingredient."""
+    missing: str       # ingredient the recipe calls for
+    use_instead: str   # substitute the pantry has
+    ratio: float = 1.0
+    note: str = ""
+
+
+# --- Derived: cook check & suggestions -----------------------------------
+
 class CookCheck(BaseModel):
     recipe_id: int
-    can_make: bool
-    missing: list[str] = []
+    can_make: bool                              # pantry covers everything directly
+    missing: list[str] = []                     # still missing, even after substitutions
+    can_make_with_substitutions: bool = False   # all gaps fillable via pantry substitutes
+    substitutions: list[SubstitutionOption] = []
 
 
 class RecipeSuggestion(BaseModel):
     recipe_id: int
     name: str
+    difficulty: str = "beginner"
     can_make: bool
+    can_make_with_substitutions: bool = False
     missing: list[str] = []
-    have_count: int   # ingredients the pantry covers
+    substitutions: list[SubstitutionOption] = []
+    have_count: int   # ingredients the pantry covers directly
     need_count: int   # total ingredients in the recipe

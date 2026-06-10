@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS recipes (
     description       TEXT NOT NULL DEFAULT '',
     instructions      TEXT NOT NULL DEFAULT '',
     servings          INTEGER NOT NULL DEFAULT 1,
-    prep_time_minutes INTEGER NOT NULL DEFAULT 0
+    prep_time_minutes INTEGER NOT NULL DEFAULT 0,
+    difficulty        TEXT NOT NULL DEFAULT 'beginner'
 );
 
 CREATE TABLE IF NOT EXISTS recipe_ingredients (
@@ -45,6 +46,17 @@ CREATE TABLE IF NOT EXISTS planned_meals (
     recipe_id INTEGER NOT NULL REFERENCES recipes(id),
     servings  INTEGER
 );
+
+-- Directional ingredient substitutions: in a recipe that calls for `ingredient_id`,
+-- you may use `substitute_id` instead, at `ratio` (substitute amount per unit of the
+-- original) with a free-text `note`. The reverse swap, if valid, is a separate row.
+CREATE TABLE IF NOT EXISTS substitutions (
+    ingredient_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+    substitute_id INTEGER NOT NULL REFERENCES ingredients(id) ON DELETE CASCADE,
+    ratio         REAL NOT NULL DEFAULT 1.0,
+    note          TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (ingredient_id, substitute_id)
+);
 """
 
 
@@ -57,4 +69,15 @@ def connect(db_path: str) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    _migrate(conn)
     conn.commit()
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Lightweight, idempotent migrations for databases created before a column existed.
+
+    (A real project would use a migration tool; at this scale a guarded ALTER is enough.)
+    """
+    cols = {row["name"] for row in conn.execute("PRAGMA table_info(recipes)")}
+    if "difficulty" not in cols:
+        conn.execute("ALTER TABLE recipes ADD COLUMN difficulty TEXT NOT NULL DEFAULT 'beginner'")

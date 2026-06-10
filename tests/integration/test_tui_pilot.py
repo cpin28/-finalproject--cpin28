@@ -23,9 +23,9 @@ def test_tui_loads_data_and_fuzzy_searches(live_server, db_path):
         app = MealPlanTUI(live_server)
         async with app.run_test(size=(110, 32)) as pilot:
             await pilot.pause()
-            # initial load: 3 seeded recipes, and the suggestions tab is populated
-            assert app.query_one("#recipe-table", DataTable).row_count == 3
-            assert app.query_one("#suggest-table", DataTable).row_count == 3
+            # initial load: 4 seeded recipes, and the suggestions tab is populated
+            assert app.query_one("#recipe-table", DataTable).row_count == 4
+            assert app.query_one("#suggest-table", DataTable).row_count == 4
 
             # fuzzy search: a gapped subsequence of "Pancakes" narrows to one row
             app.query_one("#recipe-search", Input).focus()

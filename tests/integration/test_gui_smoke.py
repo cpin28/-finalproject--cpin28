@@ -32,9 +32,9 @@ def test_gui_loads_data_and_fuzzy_searches(live_server, db_path):
         gui.load_pantry()
         gui.load_plan()
 
-        assert len(gui.recipe_tree.get_children()) == 3
-        assert len(gui.suggest_tree.get_children()) == 3
-        assert len(gui.pantry_tree.get_children()) == 3
+        assert len(gui.recipe_tree.get_children()) == 4
+        assert len(gui.suggest_tree.get_children()) == 4
+        assert len(gui.pantry_tree.get_children()) == 5
         assert len(gui.plan_tree.get_children()) == 3
 
         # fuzzy search: a gapped subsequence of "Chicken & Rice" narrows to one row

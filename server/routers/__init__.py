@@ -5,6 +5,6 @@ Each module owns the routes for one resource and exposes a `router` (an
 each file small and focused, and makes the route surface easy to navigate.
 """
 
-from . import ingredients, pantry, plan, recipes, shopping
+from . import ingredients, pantry, plan, recipes, shopping, substitutions
 
-__all__ = ["ingredients", "pantry", "plan", "recipes", "shopping"]
+__all__ = ["ingredients", "pantry", "plan", "recipes", "shopping", "substitutions"]

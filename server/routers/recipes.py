@@ -13,12 +13,15 @@ router = APIRouter(prefix="/recipes", tags=["recipes"])
 
 
 @router.get("", response_model=list[schemas.Recipe])
-def list_recipes(q: str | None = None, conn: sqlite3.Connection = Depends(get_conn)):
-    return repository.list_recipes(conn, q)
+def list_recipes(q: str | None = None, difficulty: str | None = None,
+                 conn: sqlite3.Connection = Depends(get_conn)):
+    return repository.list_recipes(conn, q, difficulty)
 
 
 @router.post("", response_model=schemas.Recipe, status_code=201)
 def create_recipe(data: schemas.RecipeCreate, conn: sqlite3.Connection = Depends(get_conn)):
+    if data.difficulty not in schemas.DIFFICULTIES:
+        raise HTTPException(status_code=422, detail=f"difficulty must be one of {schemas.DIFFICULTIES}")
     return repository.create_recipe(conn, data)
 
 
@@ -34,7 +37,8 @@ def search_recipes(q: str, limit: int = 10, conn: sqlite3.Connection = Depends(g
 def suggestions(limit: int = 10, conn: sqlite3.Connection = Depends(get_conn)):
     recipes = repository.list_recipes(conn)
     pantry = repository.list_pantry(conn)
-    return planner.suggest_recipes(recipes, pantry)[:limit]
+    subs = repository.substitutions_map(conn)
+    return planner.suggest_recipes(recipes, pantry, subs)[:limit]
 
 
 @router.get("/{recipe_id}", response_model=schemas.Recipe)
@@ -57,5 +61,5 @@ def can_make(recipe_id: int, servings: int | None = None, conn: sqlite3.Connecti
     if recipe is None:
         raise HTTPException(status_code=404, detail="recipe not found")
     pantry = repository.list_pantry(conn)
-    missing = planner.missing_for_recipe(recipe, pantry, servings)
-    return schemas.CookCheck(recipe_id=recipe_id, can_make=not missing, missing=missing)
+    subs = repository.substitutions_map(conn)
+    return planner.cook_status(recipe, pantry, subs, servings)

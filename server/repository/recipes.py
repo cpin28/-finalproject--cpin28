@@ -23,9 +23,9 @@ def _recipe_ingredients(conn: sqlite3.Connection, recipe_id: int) -> list[schema
 
 def create_recipe(conn: sqlite3.Connection, data: schemas.RecipeCreate) -> schemas.Recipe:
     cur = conn.execute(
-        """INSERT INTO recipes (name, description, instructions, servings, prep_time_minutes)
-           VALUES (?, ?, ?, ?, ?)""",
-        (data.name, data.description, data.instructions, data.servings, data.prep_time_minutes),
+        """INSERT INTO recipes (name, description, instructions, servings, prep_time_minutes, difficulty)
+           VALUES (?, ?, ?, ?, ?, ?)""",
+        (data.name, data.description, data.instructions, data.servings, data.prep_time_minutes, data.difficulty),
     )
     recipe_id = cur.lastrowid
     for ri in data.ingredients:
@@ -39,7 +39,7 @@ def create_recipe(conn: sqlite3.Connection, data: schemas.RecipeCreate) -> schem
 
 def get_recipe(conn: sqlite3.Connection, recipe_id: int) -> schemas.Recipe | None:
     r = conn.execute(
-        """SELECT id, name, description, instructions, servings, prep_time_minutes
+        """SELECT id, name, description, instructions, servings, prep_time_minutes, difficulty
            FROM recipes WHERE id = ?""",
         (recipe_id,),
     ).fetchone()
@@ -48,14 +48,21 @@ def get_recipe(conn: sqlite3.Connection, recipe_id: int) -> schemas.Recipe | Non
     return schemas.Recipe(**dict(r), ingredients=_recipe_ingredients(conn, recipe_id))
 
 
-def list_recipes(conn: sqlite3.Connection, query: str | None = None) -> list[schemas.Recipe]:
+def list_recipes(
+    conn: sqlite3.Connection, query: str | None = None, difficulty: str | None = None
+) -> list[schemas.Recipe]:
+    clauses, params = [], []
     if query:
-        rows = conn.execute(
-            "SELECT id FROM recipes WHERE name LIKE ? ORDER BY name",
-            (f"%{query}%",),
-        ).fetchall()
-    else:
-        rows = conn.execute("SELECT id FROM recipes ORDER BY name").fetchall()
+        clauses.append("name LIKE ?")
+        params.append(f"%{query}%")
+    if difficulty:
+        clauses.append("difficulty = ?")
+        params.append(difficulty)
+    sql = "SELECT id FROM recipes"
+    if clauses:
+        sql += " WHERE " + " AND ".join(clauses)
+    sql += " ORDER BY name"
+    rows = conn.execute(sql, params).fetchall()
     return [get_recipe(conn, r["id"]) for r in rows]  # type: ignore[misc]
 
 

@@ -53,11 +53,12 @@ def test_shopping_list_omits_fully_covered():
     assert items == []
 
 
-def test_pantry_with_different_unit_does_not_cover():
-    # same-unit rule: 1 kg flour in the pantry does not offset a recipe asking for grams
+def test_pantry_partial_cover_across_units():
+    # units convert within a family: 0.3 kg in the pantry offsets a 500 g requirement,
+    # leaving 200 g to buy (see test_unit_conversion.py for the full conversion behaviour)
     r = recipe(1, "Bread", 1, [(10, "flour", 500, "g")])
-    items = planner.shopping_list([meal(1, 1, 1)], {1: r}, pantry([(10, "flour", 1, "kg")]))
-    assert len(items) == 1 and items[0].quantity == 500
+    items = planner.shopping_list([meal(1, 1, 1)], {1: r}, pantry([(10, "flour", 0.3, "kg")]))
+    assert len(items) == 1 and items[0].unit == "g" and items[0].quantity == 200
 
 
 def test_can_make_and_missing():

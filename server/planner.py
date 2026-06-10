@@ -4,12 +4,13 @@ These are pure functions over `schemas` objects — no database, no I/O — whic
 whole point: this is the most interesting code to get right, so it's the easiest to
 unit-test in isolation.
 
-UNIT HANDLING (the seam):
-    Right now units are treated as opaque labels. Two quantities only combine when
-    their unit strings match; otherwise they're tracked separately. All arithmetic
-    is routed through `_canonical()`, so adding real conversions later (g<->kg,
-    ml<->l, cups<->ml) means implementing *only* that one function and widening the
-    key it returns — every aggregation below picks it up for free.
+UNIT HANDLING (the seam, now realised):
+    All arithmetic routes through `_canonical()`, which converts a (quantity, unit)
+    into a canonical (quantity, base_unit). It currently knows the mass family
+    (g/kg) and the volume family (ml/l/tsp/tbsp/cup); units in the same family
+    aggregate, different families never combine, and unknown units pass through
+    unchanged. Adding more families (e.g. imperial mass) is a one-line edit to
+    `_UNIT_FAMILIES` — every aggregation below picks it up for free.
 """
 
 from __future__ import annotations
@@ -19,12 +20,27 @@ from collections import defaultdict
 from . import schemas
 
 
-def _canonical(quantity: float, unit: str) -> tuple[float, str]:
-    """Map (quantity, unit) to a canonical (quantity, unit) for combining.
+# Unit families: each unit maps to (base_unit, factor_to_base). Units not listed here
+# pass through unchanged, so they only combine with an identical label (e.g. "unit").
+_UNIT_FAMILIES: dict[str, tuple[str, float]] = {
+    "g": ("g", 1.0), "kg": ("g", 1000.0),                 # mass -> grams
+    "ml": ("ml", 1.0), "l": ("ml", 1000.0),               # volume -> millilitres
+    "tsp": ("ml", 5.0), "tbsp": ("ml", 15.0), "cup": ("ml", 240.0),
+}
 
-    Identity for now. Replace with conversion logic to support unit families.
+
+def _canonical(quantity: float, unit: str) -> tuple[float, str]:
+    """Map (quantity, unit) to a canonical (quantity, base_unit) for combining.
+
+    Converts within a unit family (mass, volume) so e.g. 1 kg and 200 g aggregate as
+    1200 g; mass and volume have different base units, so they never combine; unknown
+    units pass through unchanged.
     """
-    return quantity, unit
+    base = _UNIT_FAMILIES.get(unit.strip().lower())
+    if base is None:
+        return quantity, unit
+    base_unit, factor = base
+    return quantity * factor, base_unit
 
 
 def required_ingredients(

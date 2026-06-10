@@ -21,17 +21,21 @@ Shopping lists and "can I make this?" are functions of the plan + recipes + pant
 storing them would invite staleness. `planner.py` recomputes them on request. They're
 pure functions, which makes them the best-tested part of the system.
 
-## 4. Units are opaque labels — for now
+## 4. Units convert within a family, through one seam
 
-Combining "200 g flour" with "1 kg flour" needs unit conversion, which is a rabbit hole
-(mass vs volume, cups, density). For this project, quantities combine **only when their
-unit strings match**; otherwise they're tracked separately and conservatively assumed
-*not* to cover each other.
+Combining "200 g flour" with "1 kg flour" needs unit conversion. The design keeps that in
+a single function: every quantity in `planner.py` routes through `_canonical(quantity,
+unit)`, which maps a unit to a canonical `(quantity, base_unit)`.
 
-This is intentionally a **seam, not a dead end**: every quantity in `planner.py` is
-routed through `_canonical(quantity, unit)`, currently the identity function. Supporting
-unit families later means implementing only that one function — the aggregation,
-subtraction, and cook-check logic pick it up unchanged.
+`_canonical` knows two families — mass (`g`/`kg` → g) and volume
+(`ml`/`l`/`tsp`/`tbsp`/`cup` → ml). Units in the same family aggregate; different families
+never combine (different base units); unknown labels pass through unchanged so they only
+match an identical label. Adding a family is a one-line edit to `_UNIT_FAMILIES`; the
+aggregation, subtraction, and cook-check logic pick it up unchanged.
+
+Deliberately out of scope: density-based conversions across families (g ↔ ml depends on
+the ingredient) and imperial units. This feature was built **test-first** — see
+`tests/unit/test_unit_conversion.py` and the `TDD (red)` / `TDD (green)` commits.
 
 ## 5. Ingredients are a shared canonical list
 
